@@ -375,6 +375,15 @@ def draw_game(gameobj):
                         deldr=True
                         row=3
                         numpearls=numpearls+1
+                
+            if donebutton.collidepoint((mx,my)):
+                if click==True:
+                    if row==0 or numpearls==0:
+                        click=False
+                    time.sleep(0.3)
+                    nextturne=True
+                    sio.emit('removepearls', {"row":row,"pearls":numpearls})
+                    click=False
 
 
         else:
@@ -382,14 +391,7 @@ def draw_game(gameobj):
 
         if gameobj["turn"]==False:
             nextturne=True
-        if donebutton.collidepoint((mx,my)):
-            if click==True:
-                if row==0 or numpearls==0:
-                    click=False
-                time.sleep(0.3)
-                nextturne=True
-                sio.emit('removepearls', {"row":row,"pearls":numpearls})
-                click=False
+        
 
         pygame.display.update()
 
@@ -427,21 +429,43 @@ def playagain():
 def fetch(freegames):
     global screen
     run=True
-    w1=100
+    click=False
+    one=pygame.Rect(100,100,300,100)
+    two=pygame.Rect(100,200,300,100)
+    three=pygame.Rect(100,300,300,100)
 
     while run:
         clock.tick(60)
+        mx,my=pygame.mouse.get_pos()
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 sio.disconnect()
                 os._exit(1)
             if event.type==VIDEORESIZE:
                 screen=pygame.display.set_mode((event.w,event.h),pygame.RESIZABLE)
+            if event.type== MOUSEBUTTONDOWN:
+                if event.button==1:
+                    click=True
         screen.fill((30,30,30))
         screen.blit(background,(0,0))
+        draw_text(f'Pearl GUI Client',font,(150,150,150),150,20)
         for i in range(0,len(freegames)):
-            draw_text(f'{i+1}  {freegames[i]["creator"]}',font,(150,150,150),100,w1)
-        pygame.display.update()    
+            if i==0:
+                pygame.draw.rect(screen,(2,100,255),one)
+                draw_text(f'{i+1}  {freegames[i]["creator"]}',font,(150,150,150),100,100)
+            if i==1:
+                pygame.draw.rect(screen,(2,100,255),two)
+                draw_text(f'{i+1}  {freegames[i]["creator"]}',font,(150,150,150),100,200)
+            if i==2:
+                pygame.draw.rect(screen,(2,100,255),three)
+                draw_text(f'{i+1}  {freegames[i]["creator"]}',font,(150,150,150),100,300)
+        if one.collidepoint((mx,my)):
+            if click==True:
+                run=False
+                sio.emit('joingame', freegames[0]["gameid"])
+                
+
+        pygame.display.update()
 
 
 menuthread=threading.Thread(target=menu)
@@ -474,6 +498,9 @@ def loadinggame(loader):
     print("Starting Game with",loader["opponent"])
     runwait=False
     draw_game(loader)
+@sio.event
+def notfree(player1name):
+    menu()
 
 @sio.event
 def nextturn(gameobj):
