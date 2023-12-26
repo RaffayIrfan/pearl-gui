@@ -18,3 +18,4 @@ six
 urllib3
 websocket-client
 Werkzeug
+pygame
